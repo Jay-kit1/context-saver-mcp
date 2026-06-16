@@ -37,6 +37,17 @@ Then confirm the CLI:
 csp --help
 ```
 
+## Install As A Codex Skill
+
+This repository includes the Codex skill definition under `skills/context-saver-mcp`.
+Install or refresh it locally with:
+
+```bash
+bash scripts/install-codex-skill.sh
+```
+
+The skill is installed to `${CODEX_HOME:-$HOME/.codex}/skills/context-saver-mcp` and has implicit invocation enabled, so Codex can automatically use it for context packs, archive packs, review packs, file extraction and project scans.
+
 ## Environment
 
 Create a private `.env` from the example:

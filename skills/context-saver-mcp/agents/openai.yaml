@@ -1,0 +1,7 @@
+interface:
+  display_name: "Context Saver MCP"
+  short_description: "Prepare compact context packs for Codex"
+  default_prompt: "Use $context-saver-mcp to prepare a compact context pack before coding."
+
+policy:
+  allow_implicit_invocation: true
