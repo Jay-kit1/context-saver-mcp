@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+outputs/*.md
+__pycache__/
+pycache/
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+*.log
+.csp_tmp/
+.tools/
