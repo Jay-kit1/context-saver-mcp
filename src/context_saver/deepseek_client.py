@@ -30,6 +30,8 @@ class DeepSeekClient:
     def chat(self, messages: list[dict[str, str]], model: str | ModelChoice | None = None, max_tokens: int = 4096, temperature: float = 0.2) -> ChatResult:
         if not self.settings.deepseek_api_key:
             raise RuntimeError("DEEPSEEK_API_KEY is not configured. Create .env from .env.example.")
+        if not self.settings.deepseek_api_key.isascii():
+            raise RuntimeError("DEEPSEEK_API_KEY contains non-ASCII characters. Run `csp configure` again.")
         choice = ModelChoice(model or ModelChoice.FLASH)
         model_name = self._model_name(choice)
         total_input_tokens = sum(count_tokens(message.get("content", "")) for message in messages)
