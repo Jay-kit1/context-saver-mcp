@@ -19,7 +19,10 @@ BINARY_EXTENSIONS = {
 SKIP_PARTS = {
     ".git", "node_modules", "dist", "build", "coverage", ".next", ".nuxt",
     "target", ".venv", "venv", "__pycache__", "pycache", ".pytest_cache",
-    "logs", "outputs", ".DS_Store",
+    "logs", "outputs", ".tools", ".DS_Store",
+}
+SENSITIVE_FILENAMES = {
+    ".env", ".env.local", ".env.development", ".env.production", ".env.test",
 }
 
 
@@ -48,7 +51,11 @@ def is_probably_binary(path: str | Path) -> bool:
 
 def should_skip_path(path: str | Path) -> bool:
     p = Path(path)
-    return any(part in SKIP_PARTS for part in p.parts)
+    return (
+        p.name in SENSITIVE_FILENAMES
+        or p.name.endswith(".egg-info")
+        or any(part in SKIP_PARTS for part in p.parts)
+    )
 
 
 def detect_file_type(path: str | Path) -> str:

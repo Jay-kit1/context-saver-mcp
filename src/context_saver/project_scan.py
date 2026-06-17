@@ -24,22 +24,32 @@ def scan_project(
     ignored: list[str] = []
     extensions: Counter[str] = Counter()
 
-    for path in root_path.rglob("*"):
-        rel = path.relative_to(root_path)
-        if len(rel.parts) > max_depth:
-            ignored.append(str(rel))
-            continue
-        if should_skip_path(rel):
-            ignored.append(str(rel))
-            if path.is_dir():
+    def walk_dir(directory: Path) -> None:
+        if len(files) >= max_files:
+            return
+        try:
+            children = sorted(directory.iterdir(), key=lambda item: (item.is_file(), item.name.lower()))
+        except OSError:
+            return
+        for path in children:
+            rel = path.relative_to(root_path)
+            if len(rel.parts) > max_depth:
+                ignored.append(str(rel))
                 continue
-            continue
-        if path.is_file():
-            files.append(rel)
-            extensions[path.suffix.lower() or "[none]"] += 1
-            if len(files) >= max_files:
-                ignored.append("max_files limit reached")
-                break
+            if should_skip_path(rel):
+                ignored.append(str(rel))
+                continue
+            if path.is_dir():
+                walk_dir(path)
+                continue
+            if path.is_file():
+                files.append(rel)
+                extensions[path.suffix.lower() or "[none]"] += 1
+                if len(files) >= max_files:
+                    ignored.append("max_files limit reached")
+                    return
+
+    walk_dir(root_path)
 
     important = [
         str(path) for path in files
