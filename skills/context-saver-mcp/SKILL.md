@@ -1,11 +1,11 @@
 ---
 name: context-saver-mcp
-description: "Use when Codex needs to prepare compact local context before coding or reviewing: search/query packaging, file extraction, archive reading, project scans, careful review packs, token-aware summaries, or prompts that mention Context Saver MCP, csp, context pack, archive pack, review pack, scan pack, DeepSeek-assisted compression, or avoiding expensive coding-agent context use."
+description: "Default context preparation layer for Codex. Use proactively before broad or expensive local work: coding in a repo, bug fixes, reviews, debugging, multi-file changes, project orientation, reading/searching many files, extracting a file, unpacking an archive, creating review packs, or preparing compact context. Also trigger for Context Saver MCP, csp, context pack, scan pack, archive pack, review pack, DeepSeek compression, token saving, or avoiding expensive coding-agent context use. Skip only for clearly tiny single-file or one-command tasks."
 ---
 
 # Context Saver MCP
 
-Use the local `context-saver-mcp` project to prepare small, useful context packs before doing expensive coding-agent work.
+Use the local `context-saver-mcp` project as the default context-preparation layer before broad coding-agent work.
 
 The installed project lives at `/Users/kukudejie/Desktop/inspiration/context-saver-mcp`. Prefer its virtualenv command:
 
@@ -17,7 +17,7 @@ If that path is missing, run from the project root with `.venv/bin/python -m con
 
 ## Default Workflow
 
-1. Decide whether the user needs context preparation before coding, reviewing, reading large files, or unpacking archives.
+1. Before broad repo exploration, multi-file coding, debugging, reviewing, archive reading, or token-sensitive work, prepare compact context first. Skip only for clearly tiny one-command or single-file tasks.
 2. Use `csp doctor` first only when API-key or environment status matters.
 3. Use the narrowest command that fits the task:
    - `csp codex "<task>"` for a Codex Context Pack.
