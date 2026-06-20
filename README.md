@@ -37,16 +37,31 @@ Then confirm the CLI:
 csp --help
 ```
 
-## Install As A Codex Skill
+## Install In Codex
 
-This repository includes the Codex skill definition under `skills/context-saver-mcp`.
-Install or refresh it locally with:
+This repository includes both:
+
+- a Codex skill under `skills/context-saver-mcp`
+- a real MCP server exposed by `context_saver.mcp_server`
+
+Install or refresh both locally with:
 
 ```bash
 bash scripts/install-codex-skill.sh
 ```
 
-The skill is installed to `${CODEX_HOME:-$HOME/.codex}/skills/context-saver-mcp` and has implicit invocation enabled, so Codex can automatically use it for context packs, archive packs, review packs, file extraction and project scans.
+The installer:
+
+- installs the skill to `${CODEX_HOME:-$HOME/.codex}/skills/context-saver-mcp`
+- adds a `context_saver` MCP server block to `${CODEX_HOME:-$HOME/.codex}/config.toml`
+- writes a global AGENTS.md rule telling Codex to call `context_saver_prepare` before broad local work
+- backs up the previous files before editing them
+
+After restarting Codex or opening a new Codex session, the MCP tools should be available:
+
+- `context_saver_prepare` - scans a project and calls DeepSeek to prepare a compact context pack
+- `context_saver_scan` - local-only scan without DeepSeek
+- `context_saver_doctor` - checks whether the MCP server can see the DeepSeek API key
 
 ## Environment
 
@@ -120,11 +135,10 @@ git check-ignore outputs/example.md
 
 ## Roadmap
 
-- v0.1 CLI
+- v0.1 CLI and Codex MCP server
 - v0.2 Cache
 - v0.3 Source citations
-- v0.4 MCP server
-- v0.5 VS Code extension
+- v0.4 VS Code extension
 
 ## License
 

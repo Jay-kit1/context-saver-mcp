@@ -16,6 +16,7 @@ dependencies = [
   "pydantic>=2",
   "python-dotenv>=1",
   "rich>=13",
+  "mcp>=1.0",
   "pypdf>=4",
   "python-docx>=1",
   "tiktoken>=0.7",
@@ -26,6 +27,7 @@ dependencies = [
 
 [project.scripts]
 csp = "context_saver.cli:app"
+context-saver-mcp = "context_saver.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

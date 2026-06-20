@@ -14,6 +14,7 @@ setup(
         "pydantic>=2",
         "python-dotenv>=1",
         "rich>=13",
+        "mcp>=1.0",
         "pypdf>=4",
         "python-docx>=1",
         "tiktoken>=0.7",
@@ -21,5 +22,10 @@ setup(
         "rarfile>=4",
         "pytest>=8",
     ],
-    entry_points={"console_scripts": ["csp=context_saver.cli:app"]},
+    entry_points={
+        "console_scripts": [
+            "csp=context_saver.cli:app",
+            "context-saver-mcp=context_saver.mcp_server:main",
+        ]
+    },
 )
