@@ -111,6 +111,7 @@ def configure(
             "DEEPSEEK_BASE_URL": base_url,
             "DEEPSEEK_FLASH_MODEL": flash_model,
             "DEEPSEEK_PRO_MODEL": pro_model,
+            "DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED": existing.get("DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED", "true"),
             "DEEPSEEK_TIMEOUT_SECONDS": existing.get("DEEPSEEK_TIMEOUT_SECONDS", "90"),
             "DEEPSEEK_MAX_RETRIES": existing.get("DEEPSEEK_MAX_RETRIES", "3"),
             "DEEPSEEK_RETRY_BACKOFF_SECONDS": existing.get("DEEPSEEK_RETRY_BACKOFF_SECONDS", "0.75"),
@@ -150,6 +151,7 @@ def configure(
         "DEEPSEEK_BASE_URL",
         "DEEPSEEK_FLASH_MODEL",
         "DEEPSEEK_PRO_MODEL",
+        "DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED",
         "DEEPSEEK_TIMEOUT_SECONDS",
         "DEEPSEEK_MAX_RETRIES",
         "DEEPSEEK_RETRY_BACKOFF_SECONDS",
@@ -179,6 +181,7 @@ def doctor(
     console.print(f"Python package: [green]installed[/green]")
     console.print(f"Outputs directory: {'[green]ok[/green]' if Path('outputs').exists() else '[red]missing[/red]'}")
     console.print(f"DeepSeek base URL: {settings.deepseek_base_url}")
+    console.print(f"DeepSeek external context: {'[green]allowed[/green]' if settings.deepseek_external_context_allowed else '[yellow]disabled[/yellow]'}")
     console.print(f"DeepSeek timeout: {settings.deepseek_timeout_seconds:g}s")
     console.print(f"DeepSeek retries: {settings.deepseek_max_retries}")
     console.print(f"DeepSeek retry backoff: {settings.deepseek_retry_backoff_seconds:g}s")

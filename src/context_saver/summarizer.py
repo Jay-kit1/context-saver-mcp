@@ -27,6 +27,8 @@ def model_summary(
     settings: Settings | None = None,
 ) -> str | None:
     settings = settings or load_settings()
+    if not settings.deepseek_external_context_allowed:
+        return None
     if not settings.deepseek_api_key:
         return None
     chunks = split_text_by_tokens(text, max_tokens=max(1000, decision.internal_input_budget // 4))

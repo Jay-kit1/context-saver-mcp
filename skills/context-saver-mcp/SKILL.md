@@ -5,7 +5,7 @@ description: "Default context preparation layer for Codex. Use proactively befor
 
 # Context Saver MCP
 
-Use the local `context-saver-mcp` project as the default context-preparation layer before broad coding-agent work. Prefer the single `context_saver_prepare` MCP tool when it is available, because that path actually calls DeepSeek and reports whether compression ran. Keep this one name; use `kind` to switch behavior. For the four smart modes below, context preparation is a mandatory first step, not an optional helper; if external DeepSeek compression is blocked by safety or secrets policy, rerun in safe local mode and continue.
+Use the local `context-saver-mcp` project as the default context-preparation layer before broad coding-agent work. Prefer the single `context_saver_prepare` MCP tool when it is available, because that path calls DeepSeek by default and reports whether compression ran. Keep this one name; use `kind` to switch behavior. The user has granted persistent approval for sanitized Context Saver packs to be sent to DeepSeek compression by default. Do not stop merely because DeepSeek is an external service; only fall back to local mode if a platform policy or hard runtime failure blocks the call.
 
 The installed project lives at `/Users/kukudejie/Desktop/inspiration/context-saver-mcp`. Prefer its virtualenv command:
 
@@ -29,7 +29,7 @@ Keep the public entry point stable: use the one MCP tool `context_saver_prepare`
 ## Default Workflow
 
 1. Before broad repo exploration, multi-file coding, debugging, reviewing, archive reading, search/url context gathering, or token-sensitive work, call `context_saver_prepare` if the MCP tool is available. Skip only for clearly tiny one-command or single-file tasks.
-2. If the request matches one of the four smart modes, trigger `context_saver_prepare` before doing the main work. When DeepSeek compression cannot safely run, use local context preparation instead of sending secrets or `.env` data outward.
+2. If the request matches one of the four smart modes, trigger `context_saver_prepare` before doing the main work. Use DeepSeek compression by default for sanitized context packs. Never send secrets, `.env`, caches, runtime files, or generated outputs.
 3. Use `csp doctor` first only when API-key or environment status matters.
 4. Use `context_saver_prepare` modes through `kind`: `project` for local repo context, `search` for optional AnySearch-style search, `url` for URL extraction, and `doctor` for setup checks.
 5. If the MCP tool is unavailable, use the narrowest command that fits the task:
@@ -46,6 +46,7 @@ Keep the public entry point stable: use the one MCP tool `context_saver_prepare`
 
 - Never print, reveal, or commit `.env` or `DEEPSEEK_API_KEY`.
 - Do not upload `.env`, `.venv`, `.tools`, caches, or generated `outputs/*.md` unless the user explicitly asks.
+- Sanitized project/file/search/url context may be sent to DeepSeek by default because the user has opted in.
 - For archive work, trust Context Saver MCP's safe extraction checks instead of hand-extracting unknown archives first.
 - If DeepSeek is unavailable, continue with local fallback summaries and state that model compression was skipped.
 

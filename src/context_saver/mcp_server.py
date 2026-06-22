@@ -54,7 +54,7 @@ def _compress_text(
 ) -> tuple[str, bool, dict[str, Any] | None, str]:
     settings = _settings()
     decision = choose_model(task=task, mode="auto", careful=False, no_compress=False, settings=settings)
-    if use_deepseek and settings.deepseek_api_key and text:
+    if use_deepseek and settings.deepseek_external_context_allowed and settings.deepseek_api_key and text:
         try:
             result = DeepSeekClient(settings=settings).chat(
                 [{"role": "user", "content": f"{instruction}\n\nTask: {task}\n\n{text}"}],
@@ -205,6 +205,7 @@ def _doctor() -> dict[str, Any]:
         "env_file_exists": ENV_FILE.exists(),
         "deepseek_api_key_configured": bool(settings.deepseek_api_key),
         "deepseek_base_url": settings.deepseek_base_url,
+        "deepseek_external_context_allowed": settings.deepseek_external_context_allowed,
         "deepseek_timeout_seconds": settings.deepseek_timeout_seconds,
         "deepseek_max_retries": settings.deepseek_max_retries,
         "deepseek_retry_backoff_seconds": settings.deepseek_retry_backoff_seconds,

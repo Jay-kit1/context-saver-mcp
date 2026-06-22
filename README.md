@@ -84,6 +84,14 @@ cp .env.example .env
 
 Set `DEEPSEEK_API_KEY` in `.env`. Never commit API keys. This repository ignores `.env`, `.env.*` except `.env.example`, and generated `outputs/*.md`.
 
+DeepSeek compression is enabled for sanitized context by default:
+
+```bash
+DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED=true
+```
+
+Set it to `false` only when you want all compression to stay local. Context Saver still excludes `.env`, API keys, caches, runtime files and generated outputs from context packs.
+
 DeepSeek connection stability can be tuned without changing code:
 
 ```bash
