@@ -2,7 +2,7 @@
 
 Stop wasting expensive coding-agent tokens on web search, long files, archives and oversized project context.
 
-Context Saver MCP is a local search, file-extraction, archive-reading, careful-review and context-compression proxy for Codex, Claude Code, Qwen Code, Cline and Aider. It uses low-cost models such as DeepSeek V4 Flash to search, extract and compress useful context, and switches to DeepSeek V4 Pro for important, high-risk or careful-review tasks.
+Context Saver MCP is a local search, file-extraction, archive-reading, careful-review and context-compression proxy for Codex, Claude Code, Qwen Code, Cline and Aider. It uses low-cost models such as DeepSeek V4 Flash to extract and compress useful context, and switches to DeepSeek V4 Pro for important, high-risk or careful-review tasks. Optional AnySearch-style web search and URL extraction can feed external context into the same compression workflow without replacing the local-first core.
 
 Flash may support a 600,000-token context window and Pro may support a 1,000,000-token context window, but these are maximum limits, not default targets. Context Saver uses smaller internal budgets by default, such as 64k for Flash normal tasks and 240k for careful review, then applies layered summarization to keep both DeepSeek and coding-agent token usage under control.
 
@@ -22,6 +22,8 @@ Coding agents often burn premium tokens and search quota on repetitive web searc
 - Chunking and budget decisions are token-based, not character-based.
 - Supports search, file extraction, archive reading, project scan and careful review.
 - Outputs Codex Context Pack, Search Pack, Extract Pack, Archive Pack, Review Pack and Project Scan Pack.
+- Optional AnySearch-style web search, vertical search and URL extraction for external context.
+- Real Codex MCP tool: `context_saver_prepare`. It stays as the single stable entry point and switches behavior with `kind="project"`, `kind="search"`, `kind="url"` or `kind="doctor"`.
 
 ## Install
 
@@ -57,11 +59,20 @@ The installer:
 - writes a global AGENTS.md rule telling Codex to call `context_saver_prepare` before broad local work
 - backs up the previous files before editing them
 
-After restarting Codex or opening a new Codex session, the MCP tools should be available:
+After restarting Codex or opening a new Codex session, one MCP tool should be available:
 
-- `context_saver_prepare` - scans a project and calls DeepSeek to prepare a compact context pack
-- `context_saver_scan` - local-only scan without DeepSeek
-- `context_saver_doctor` - checks whether the MCP server can see the DeepSeek API key
+- `context_saver_prepare` - the single integrated entry point. Use `kind="project"` for local project context, `kind="search"` for optional AnySearch-style search plus compression, `kind="url"` for URL extraction plus compression, and `kind="doctor"` for setup checks.
+
+For matching tasks, context preparation is mandatory before the main work. If external DeepSeek compression is blocked by safety or secrets policy, the agent should fall back to safe local context preparation and continue instead of sending secrets outward.
+
+Natural-language routing is intentional. The agent should infer one of four modes from intent:
+
+- Default project mode: "帮我修这个项目", "review", "debug", "读这个仓库", "先了解项目", local file/archive extraction, or token-saving context work -> `kind="project"`
+- Optional web search plus compression: "帮我搜索网页", "查一下", "找资料", "找最新文档", external research, docs lookup, or comparisons -> `kind="search"`
+- Optional webpage extraction plus compression: pasted URLs, "抽取网页", "读取网页", "总结这个链接", or "把这个 URL 看一下" -> `kind="url"`
+- Configuration/status check: "检查 API key", "DeepSeek 有没有调用", "MCP 为什么没启用", setup health, or default activation checks -> `kind="doctor"`
+
+The installer also writes `runtime.conf` inside the installed skill directory. This records the selected runtime, command path, MCP server name and default tool so future agents do not need to rediscover the entry point.
 
 ## Environment
 
@@ -72,6 +83,16 @@ cp .env.example .env
 ```
 
 Set `DEEPSEEK_API_KEY` in `.env`. Never commit API keys. This repository ignores `.env`, `.env.*` except `.env.example`, and generated `outputs/*.md`.
+
+Optional web search and URL extraction can be enabled with:
+
+```bash
+ANYSEARCH_ENABLED=true
+ANYSEARCH_API_KEY=
+ANYSEARCH_BASE_URL=https://api.anysearch.com/mcp
+```
+
+`ANYSEARCH_API_KEY` is optional if the endpoint allows anonymous access, but a key may provide higher limits. Leave `ANYSEARCH_ENABLED=false` to keep search commands on local fallback unless a key is present.
 
 You can also use the interactive setup command:
 
@@ -93,6 +114,7 @@ Most local commands still run without an API key by using deterministic extracti
 
 ```bash
 csp search "Python pypdf extract text best practices"
+csp search "AAPL latest earnings" --domain finance --sub-domain finance.us_stock --sdp ticker=AAPL
 csp codex "Fix the login redirect bug using local project context"
 csp extract README.md --codex
 csp extract error.log --careful
@@ -132,6 +154,8 @@ Do not write API keys into source code. Do not commit `.env`. Confirm ignore beh
 git check-ignore .env
 git check-ignore outputs/example.md
 ```
+
+See `SECURITY.md` for the data-flow and secret-handling policy, and `TEST_PLAN.md` for install, MCP and provider verification steps.
 
 ## Roadmap
 

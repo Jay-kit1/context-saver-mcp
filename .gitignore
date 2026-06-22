@@ -13,3 +13,5 @@ build/
 *.log
 .csp_tmp/
 .tools/
+runtime.conf
+skills/context-saver-mcp/runtime.conf

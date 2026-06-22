@@ -23,3 +23,5 @@ def test_configure_writes_env(tmp_path):
     text = env_path.read_text(encoding="utf-8")
     assert "DEEPSEEK_API_KEY=sk-test" in text
     assert "DEEPSEEK_BASE_URL=https://api.deepseek.com" in text
+    assert "ANYSEARCH_ENABLED=false" in text
+    assert "ANYSEARCH_BASE_URL=https://api.anysearch.com/mcp" in text

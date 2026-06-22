@@ -13,6 +13,9 @@ class Settings:
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_flash_model: str = "deepseek-v4-flash"
     deepseek_pro_model: str = "deepseek-v4-pro"
+    anysearch_api_key: str = ""
+    anysearch_base_url: str = "https://api.anysearch.com/mcp"
+    anysearch_enabled: bool = False
     model_routing_mode: str = "auto"
     flash_context_tokens: int = 600000
     pro_context_tokens: int = 1000000
@@ -44,6 +47,13 @@ def _int_env(name: str, default: int) -> int:
     return int(value)
 
 
+def _bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def load_settings(env_file: str | Path | None = None) -> Settings:
     load_dotenv(env_file)
     return Settings(
@@ -51,6 +61,9 @@ def load_settings(env_file: str | Path | None = None) -> Settings:
         deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
         deepseek_flash_model=os.getenv("DEEPSEEK_FLASH_MODEL", "deepseek-v4-flash"),
         deepseek_pro_model=os.getenv("DEEPSEEK_PRO_MODEL", "deepseek-v4-pro"),
+        anysearch_api_key=os.getenv("ANYSEARCH_API_KEY", ""),
+        anysearch_base_url=os.getenv("ANYSEARCH_BASE_URL", "https://api.anysearch.com/mcp"),
+        anysearch_enabled=_bool_env("ANYSEARCH_ENABLED", False),
         model_routing_mode=os.getenv("MODEL_ROUTING_MODE", "auto").lower(),
         flash_context_tokens=_int_env("FLASH_CONTEXT_TOKENS", 600000),
         pro_context_tokens=_int_env("PRO_CONTEXT_TOKENS", 1000000),

@@ -1,0 +1,6 @@
+Runtime: Python
+Command: /path/to/context-saver-mcp/.venv/bin/context-saver-mcp
+MCPServer: context_saver
+MCPToolDefault: context_saver_prepare
+ProjectRoot: /path/to/context-saver-mcp
+InstalledAt: 2026-01-01T00:00:00Z

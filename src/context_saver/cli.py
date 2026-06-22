@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import sys
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -25,7 +26,7 @@ from .file_types import detect_file_type
 from .project_scan import scan_project
 from .review import review_input
 from .router import choose_model
-from .search import local_search_stub
+from .search import web_search
 from .summarizer import model_summary, simple_summary
 from .token_utils import estimate_tokens
 
@@ -49,6 +50,29 @@ def _write_pack(prefix: str, content: str) -> Path:
     output_path.write_text(content, encoding="utf-8")
     console.print(f"[green]Saved[/green] {output_path}")
     return output_path
+
+
+def _parse_key_values(raw: str) -> dict[str, str]:
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, dict):
+            return {str(key): "" if value is None else str(value) for key, value in parsed.items()}
+    except json.JSONDecodeError:
+        pass
+    if raw.startswith("{") and raw.endswith("}"):
+        raw = raw[1:-1]
+    result: dict[str, str] = {}
+    for part in raw.split(","):
+        if not part.strip():
+            continue
+        separator = "=" if "=" in part else ":"
+        if separator not in part:
+            continue
+        key, value = part.split(separator, 1)
+        key = key.strip().strip("'\"")
+        if key:
+            result[key] = value.strip().strip("'\"")
+    return result
 
 
 def _summarize(text: str, decision, instruction: str, local_max_tokens: int) -> str:
@@ -86,6 +110,9 @@ def configure(
             "DEEPSEEK_BASE_URL": base_url,
             "DEEPSEEK_FLASH_MODEL": flash_model,
             "DEEPSEEK_PRO_MODEL": pro_model,
+            "ANYSEARCH_ENABLED": existing.get("ANYSEARCH_ENABLED", "false"),
+            "ANYSEARCH_API_KEY": existing.get("ANYSEARCH_API_KEY", ""),
+            "ANYSEARCH_BASE_URL": existing.get("ANYSEARCH_BASE_URL", "https://api.anysearch.com/mcp"),
             "MODEL_ROUTING_MODE": existing.get("MODEL_ROUTING_MODE", "auto"),
         }
     )
@@ -119,6 +146,9 @@ def configure(
         "DEEPSEEK_BASE_URL",
         "DEEPSEEK_FLASH_MODEL",
         "DEEPSEEK_PRO_MODEL",
+        "ANYSEARCH_ENABLED",
+        "ANYSEARCH_API_KEY",
+        "ANYSEARCH_BASE_URL",
         "MODEL_ROUTING_MODE",
         *defaults.keys(),
     ]
@@ -173,17 +203,31 @@ def search(
     auto: bool = typer.Option(False, "--auto"),
     careful: bool = typer.Option(False, "--careful"),
     no_compress: bool = typer.Option(False, "--no-compress"),
+    max_results: int = typer.Option(5, "--max-results", min=1, max=10),
+    domain: str = typer.Option("", "--domain"),
+    sub_domain: str = typer.Option("", "--sub-domain"),
+    sub_domain_params: Optional[str] = typer.Option(None, "--sdp", "--sub-domain-params"),
 ):
     """Create a Search Pack. The first version records local structured results."""
     decision = _decision(query, flash, pro, auto, careful, no_compress)
-    model_text = _summarize(
+    parsed_params = _parse_key_values(sub_domain_params) if sub_domain_params else None
+    findings, search_error = web_search(
         query,
+        max_results=max_results,
+        domain=domain,
+        sub_domain=sub_domain,
+        sub_domain_params=parsed_params,
+        settings=load_settings(),
+    )
+    model_text = _summarize(
+        "\n\n".join(findings),
         decision,
         "Prepare a concise Search Pack draft. Preserve exact technologies, versions, commands and uncertainties.",
         local_max_tokens=1000,
     )
-    findings = [model_text] if model_text else local_search_stub(query)
-    pack = build_search_pack(query, decision, findings=findings)
+    findings = [model_text] if model_text else findings
+    notes = search_error or "Search results were gathered through the configured search provider."
+    pack = build_search_pack(query, decision, findings=findings, notes=notes)
     _write_pack("search_pack", pack)
     console.print(pack)
 

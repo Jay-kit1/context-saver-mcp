@@ -14,6 +14,8 @@ CONFIG_BACKUP="$CODEX_HOME/config.toml.context-saver-mcp.bak"
 CONFIG_START="# context-saver-mcp:start"
 CONFIG_END="# context-saver-mcp:end"
 PYTHON_BIN="$ROOT_DIR/.venv/bin/python"
+MCP_COMMAND="$ROOT_DIR/.venv/bin/context-saver-mcp"
+RUNTIME_FILE="$SKILL_TARGET/runtime.conf"
 
 if [ ! -d "$SKILL_SOURCE" ]; then
   echo "Missing skill source: $SKILL_SOURCE" >&2
@@ -45,7 +47,14 @@ block = f"""{start}
 ## Context Saver MCP default
 
 - Use `$context-saver-mcp` proactively before broad or expensive local work: repo orientation, coding in a project, bug fixes, reviews, debugging, multi-file changes, reading/searching many files, extracting files, or unpacking archives.
-- When the `context_saver_prepare` MCP tool is available, call it before broad local work so DeepSeek compression actually runs. Use the skill as a fallback only when the MCP tool is unavailable.
+- Use the single MCP tool `context_saver_prepare` when available; do not look for separate Context Saver search or URL tools.
+- For matching tasks, context preparation is mandatory before the main work, not optional. If external DeepSeek compression is blocked by safety or secrets policy, fall back to safe local context preparation and continue.
+- Infer one of four `kind` modes from the user's intent:
+  - `project`: default mode for local repo/code/review/debug/multi-file/file/archive/token-saving context work.
+  - `search`: optional web search plus compression for "帮我搜索网页", "查一下", "找资料", latest/current info, docs lookup, external research, or comparisons.
+  - `url`: optional webpage extraction plus compression for pasted `http://` or `https://` links, "抽取网页", "读取网页", "总结这个链接", or reading one page deeply.
+  - `doctor`: configuration/status checks for API keys, MCP installation, default activation, DeepSeek usage, or "为什么没调用".
+- Call `context_saver_prepare` before broad local work so DeepSeek compression actually runs. Use the skill as a fallback only when the MCP tool is unavailable.
 - Treat it as the default context-preparation step when a task may otherwise require loading many files into Codex. Skip only for clearly tiny one-command or single-file tasks.
 - Never include `.env`, API keys, `.venv`, `.tools`, caches, or generated `outputs/*.md` in uploaded or committed context.
 {end}
@@ -59,6 +68,15 @@ else:
     text = text.rstrip() + ("\n\n" if text.strip() else "") + block
 path.write_text(text.rstrip() + "\n", encoding="utf-8")
 PY
+
+cat > "$RUNTIME_FILE" <<EOF
+Runtime: Python
+Command: $MCP_COMMAND
+MCPServer: context_saver
+MCPToolDefault: context_saver_prepare
+ProjectRoot: $ROOT_DIR
+InstalledAt: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+EOF
 
 touch "$CONFIG_FILE"
 cp "$CONFIG_FILE" "$CONFIG_BACKUP"
@@ -76,6 +94,7 @@ python_bin = sys.argv[4]
 root_dir = sys.argv[5]
 block = f"""{start}
 [mcp_servers.context_saver]
+type = "stdio"
 command = {json.dumps(python_bin)}
 args = ["-m", "context_saver.mcp_server"]
 startup_timeout_sec = 30
@@ -85,12 +104,36 @@ CONTEXT_SAVER_PROJECT_ROOT = {json.dumps(root_dir)}
 {end}
 """
 text = path.read_text(encoding="utf-8") if path.exists() else ""
-if start in text and end in text:
-    before, rest = text.split(start, 1)
-    _, after = rest.split(end, 1)
-    text = before.rstrip() + "\n\n" + block + after.lstrip()
-else:
-    text = text.rstrip() + ("\n\n" if text.strip() else "") + block
+lines = text.splitlines()
+cleaned: list[str] = []
+skip_marker = False
+skip_context_saver = False
+for line in lines:
+    stripped = line.strip()
+    if stripped == start:
+        skip_marker = True
+        continue
+    if skip_marker:
+        if stripped == end:
+            skip_marker = False
+        continue
+    if stripped == "[mcp_servers.context_saver]":
+        skip_context_saver = True
+        continue
+    if skip_context_saver:
+        if stripped.startswith("[") and stripped not in {
+            "[mcp_servers.context_saver.env]",
+            "[mcp_servers.context_saver]",
+        }:
+            skip_context_saver = False
+            cleaned.append(line)
+        continue
+    if stripped == end:
+        continue
+    cleaned.append(line)
+
+text = "\n".join(cleaned).rstrip()
+text = text + ("\n\n" if text else "") + block
 path.write_text(text.rstrip() + "\n", encoding="utf-8")
 PY
 
@@ -98,5 +141,6 @@ echo "Installed Context Saver MCP skill to: $SKILL_TARGET"
 echo "Implicit invocation is enabled in agents/openai.yaml."
 echo "Global default instruction installed in: $AGENTS_FILE"
 echo "Previous AGENTS.md backup saved to: $AGENTS_BACKUP"
+echo "Runtime status saved to: $RUNTIME_FILE"
 echo "Context Saver MCP server installed in: $CONFIG_FILE"
 echo "Previous config.toml backup saved to: $CONFIG_BACKUP"
