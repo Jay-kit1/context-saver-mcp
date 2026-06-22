@@ -84,6 +84,18 @@ cp .env.example .env
 
 Set `DEEPSEEK_API_KEY` in `.env`. Never commit API keys. This repository ignores `.env`, `.env.*` except `.env.example`, and generated `outputs/*.md`.
 
+DeepSeek connection stability can be tuned without changing code:
+
+```bash
+DEEPSEEK_TIMEOUT_SECONDS=90
+DEEPSEEK_MAX_RETRIES=3
+DEEPSEEK_RETRY_BACKOFF_SECONDS=0.75
+```
+
+The DeepSeek client retries temporary timeouts, network disconnects, 429 rate limits and 5xx server errors. Authentication errors such as 401/403 fail fast so bad keys are not retried forever.
+
+To verify the real API path without exposing your key, run `csp doctor --probe-deepseek`. It sends one tiny request and reports whether the configured base URL, model and API key work.
+
 Optional web search and URL extraction can be enabled with:
 
 ```bash

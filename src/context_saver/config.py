@@ -13,6 +13,9 @@ class Settings:
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_flash_model: str = "deepseek-v4-flash"
     deepseek_pro_model: str = "deepseek-v4-pro"
+    deepseek_timeout_seconds: float = 90.0
+    deepseek_max_retries: int = 3
+    deepseek_retry_backoff_seconds: float = 0.75
     anysearch_api_key: str = ""
     anysearch_base_url: str = "https://api.anysearch.com/mcp"
     anysearch_enabled: bool = False
@@ -47,6 +50,13 @@ def _int_env(name: str, default: int) -> int:
     return int(value)
 
 
+def _float_env(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None or value == "":
+        return default
+    return float(value)
+
+
 def _bool_env(name: str, default: bool) -> bool:
     value = os.getenv(name)
     if value is None or value == "":
@@ -61,6 +71,9 @@ def load_settings(env_file: str | Path | None = None) -> Settings:
         deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
         deepseek_flash_model=os.getenv("DEEPSEEK_FLASH_MODEL", "deepseek-v4-flash"),
         deepseek_pro_model=os.getenv("DEEPSEEK_PRO_MODEL", "deepseek-v4-pro"),
+        deepseek_timeout_seconds=_float_env("DEEPSEEK_TIMEOUT_SECONDS", 90.0),
+        deepseek_max_retries=_int_env("DEEPSEEK_MAX_RETRIES", 3),
+        deepseek_retry_backoff_seconds=_float_env("DEEPSEEK_RETRY_BACKOFF_SECONDS", 0.75),
         anysearch_api_key=os.getenv("ANYSEARCH_API_KEY", ""),
         anysearch_base_url=os.getenv("ANYSEARCH_BASE_URL", "https://api.anysearch.com/mcp"),
         anysearch_enabled=_bool_env("ANYSEARCH_ENABLED", False),

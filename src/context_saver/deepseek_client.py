@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Any
 
 import httpx
@@ -19,9 +20,24 @@ class ChatResult:
 
 
 class DeepSeekClient:
-    def __init__(self, settings: Settings | None = None, timeout: float = 60.0):
+    RETRYABLE_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        timeout: float | None = None,
+        max_retries: int | None = None,
+        retry_backoff_seconds: float | None = None,
+    ):
         self.settings = settings or load_settings()
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else self.settings.deepseek_timeout_seconds
+        self.max_retries = max(0, max_retries if max_retries is not None else self.settings.deepseek_max_retries)
+        self.retry_backoff_seconds = max(
+            0.0,
+            retry_backoff_seconds
+            if retry_backoff_seconds is not None
+            else self.settings.deepseek_retry_backoff_seconds,
+        )
 
     def _model_name(self, model: str | ModelChoice | None) -> str:
         choice = ModelChoice(model or ModelChoice.FLASH)
@@ -44,21 +60,79 @@ class DeepSeekClient:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
-        try:
-            with httpx.Client(base_url=self.settings.deepseek_base_url, timeout=self.timeout) as client:
-                response = client.post(
-                    "/chat/completions",
-                    json=payload,
-                    headers={"Authorization": f"Bearer {self.settings.deepseek_api_key}"},
-                )
-                response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            if exc.response.status_code in {401, 403}:
-                raise RuntimeError("DeepSeek authentication failed. Check DEEPSEEK_API_KEY.") from exc
-            raise RuntimeError(f"DeepSeek API HTTP error: {exc.response.status_code}") from exc
-        except httpx.TimeoutException as exc:
-            raise RuntimeError("DeepSeek API request timed out.") from exc
-        except httpx.NetworkError as exc:
-            raise RuntimeError("DeepSeek API network error.") from exc
+        response = self._post_with_retries(payload, model_name)
         data = response.json()
-        return ChatResult(content=data["choices"][0]["message"]["content"], usage=data.get("usage"))
+        content = data["choices"][0]["message"].get("content") or ""
+        usage = data.get("usage")
+        if not content.strip():
+            reasoning_tokens = (
+                usage.get("completion_tokens_details", {}).get("reasoning_tokens")
+                if isinstance(usage, dict)
+                else None
+            )
+            if reasoning_tokens:
+                raise RuntimeError(
+                    "DeepSeek returned no visible content because the output budget was consumed by reasoning. "
+                    "Increase DEFAULT_OUTPUT_TOKENS or the command's max_tokens."
+                )
+            raise RuntimeError("DeepSeek returned an empty response body.")
+        return ChatResult(content=content, usage=usage)
+
+    def _post_with_retries(self, payload: dict[str, Any], model_name: str) -> httpx.Response:
+        attempts = self.max_retries + 1
+        last_error: Exception | None = None
+        headers = {"Authorization": f"Bearer {self.settings.deepseek_api_key}"}
+
+        for attempt in range(1, attempts + 1):
+            try:
+                with httpx.Client(base_url=self.settings.deepseek_base_url, timeout=self.timeout) as client:
+                    response = client.post("/chat/completions", json=payload, headers=headers)
+                    response.raise_for_status()
+                    return response
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                if status_code in {401, 403}:
+                    raise RuntimeError("DeepSeek authentication failed. Check DEEPSEEK_API_KEY.") from exc
+                if status_code not in self.RETRYABLE_STATUS_CODES or attempt == attempts:
+                    body = exc.response.text[:200].replace("\n", " ")
+                    detail = f": {body}" if body else ""
+                    raise RuntimeError(
+                        f"DeepSeek API HTTP error {status_code} after {attempt}/{attempts} attempt(s){detail}"
+                    ) from exc
+                last_error = exc
+                self._sleep_before_retry(attempt, exc.response)
+            except httpx.TimeoutException as exc:
+                last_error = exc
+                if attempt == attempts:
+                    raise RuntimeError(
+                        f"DeepSeek API request timed out after {attempts} attempt(s). "
+                        f"base_url={self.settings.deepseek_base_url} model={model_name}"
+                    ) from exc
+                self._sleep_before_retry(attempt)
+            except httpx.TransportError as exc:
+                last_error = exc
+                if attempt == attempts:
+                    raise RuntimeError(
+                        f"DeepSeek API network error after {attempts} attempt(s). "
+                        f"base_url={self.settings.deepseek_base_url} model={model_name}"
+                    ) from exc
+                self._sleep_before_retry(attempt)
+
+        raise RuntimeError(f"DeepSeek API request failed after {attempts} attempt(s): {last_error}")
+
+    def _sleep_before_retry(self, attempt: int, response: httpx.Response | None = None) -> None:
+        retry_after = response.headers.get("retry-after") if response is not None else None
+        delay = self._parse_retry_after(retry_after)
+        if delay is None:
+            delay = self.retry_backoff_seconds * (2 ** (attempt - 1))
+        if delay > 0:
+            time.sleep(delay)
+
+    @staticmethod
+    def _parse_retry_after(value: str | None) -> float | None:
+        if not value:
+            return None
+        try:
+            return max(0.0, float(value))
+        except ValueError:
+            return None

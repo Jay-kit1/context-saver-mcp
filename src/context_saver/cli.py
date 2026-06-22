@@ -21,6 +21,7 @@ from .codex_pack import (
     timestamped_output,
 )
 from .config import load_settings
+from .deepseek_client import DeepSeekClient
 from .file_extract import extract_text_from_file
 from .file_types import detect_file_type
 from .project_scan import scan_project
@@ -110,6 +111,9 @@ def configure(
             "DEEPSEEK_BASE_URL": base_url,
             "DEEPSEEK_FLASH_MODEL": flash_model,
             "DEEPSEEK_PRO_MODEL": pro_model,
+            "DEEPSEEK_TIMEOUT_SECONDS": existing.get("DEEPSEEK_TIMEOUT_SECONDS", "90"),
+            "DEEPSEEK_MAX_RETRIES": existing.get("DEEPSEEK_MAX_RETRIES", "3"),
+            "DEEPSEEK_RETRY_BACKOFF_SECONDS": existing.get("DEEPSEEK_RETRY_BACKOFF_SECONDS", "0.75"),
             "ANYSEARCH_ENABLED": existing.get("ANYSEARCH_ENABLED", "false"),
             "ANYSEARCH_API_KEY": existing.get("ANYSEARCH_API_KEY", ""),
             "ANYSEARCH_BASE_URL": existing.get("ANYSEARCH_BASE_URL", "https://api.anysearch.com/mcp"),
@@ -146,6 +150,9 @@ def configure(
         "DEEPSEEK_BASE_URL",
         "DEEPSEEK_FLASH_MODEL",
         "DEEPSEEK_PRO_MODEL",
+        "DEEPSEEK_TIMEOUT_SECONDS",
+        "DEEPSEEK_MAX_RETRIES",
+        "DEEPSEEK_RETRY_BACKOFF_SECONDS",
         "ANYSEARCH_ENABLED",
         "ANYSEARCH_API_KEY",
         "ANYSEARCH_BASE_URL",
@@ -159,18 +166,41 @@ def configure(
 
 
 @app.command()
-def doctor():
+def doctor(
+    probe_deepseek: bool = typer.Option(
+        False,
+        "--probe-deepseek",
+        help="Send a tiny DeepSeek request to verify API connectivity without printing secrets.",
+    )
+):
     """Check local setup and API-key status."""
     settings = load_settings()
     console.print("[bold]Context Saver MCP Doctor[/bold]")
     console.print(f"Python package: [green]installed[/green]")
     console.print(f"Outputs directory: {'[green]ok[/green]' if Path('outputs').exists() else '[red]missing[/red]'}")
     console.print(f"DeepSeek base URL: {settings.deepseek_base_url}")
+    console.print(f"DeepSeek timeout: {settings.deepseek_timeout_seconds:g}s")
+    console.print(f"DeepSeek retries: {settings.deepseek_max_retries}")
+    console.print(f"DeepSeek retry backoff: {settings.deepseek_retry_backoff_seconds:g}s")
     if settings.deepseek_api_key:
         console.print("DeepSeek API key: [green]configured[/green]")
     else:
         console.print("DeepSeek API key: [yellow]not configured[/yellow]")
         console.print("Run `csp configure` before model-powered compression or API calls.")
+    if probe_deepseek:
+        if not settings.deepseek_api_key:
+            console.print("DeepSeek probe: [yellow]skipped because API key is not configured[/yellow]")
+        else:
+            try:
+                result = DeepSeekClient(settings=settings, timeout=30, max_retries=1).chat(
+                    [{"role": "user", "content": "Reply with exactly: ok"}],
+                    max_tokens=64,
+                    temperature=0,
+                )
+                preview = result.content.strip().replace("\n", " ")[:80]
+                console.print(f"DeepSeek probe: [green]ok[/green] ({preview})")
+            except Exception as exc:
+                console.print(f"DeepSeek probe: [red]failed[/red] {exc}")
     console.print("Git ignore check: `.env` and `outputs/*.md` should be ignored by this project.")
 
 
