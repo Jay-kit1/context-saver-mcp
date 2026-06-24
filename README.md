@@ -88,10 +88,10 @@ DeepSeek compression is enabled for sanitized context by default:
 
 ```bash
 DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED=true
-CONTEXT_SAVER_TRUSTED_PROJECT=true
+CONTEXT_SAVER_TRUSTED_TOOL=true
 ```
 
-Set either value to `false` only when you want all compression to stay local. Context Saver still excludes `.env`, API keys, caches, runtime files and generated outputs from context packs. See `TRUSTED_CONTEXT.md` for the project-level trust policy.
+Set either value to `false` only when you want all compression to stay local. Context Saver still excludes `.env`, API keys, caches, runtime files and generated outputs from context packs. See `TRUSTED_CONTEXT.md` for the tool-level trust policy.
 
 DeepSeek connection stability can be tuned without changing code:
 

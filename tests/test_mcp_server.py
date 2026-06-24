@@ -12,7 +12,7 @@ def test_prepare_project_context_without_deepseek(tmp_path):
     assert result["pack_tokens"] > 0
     assert "context_pack" in result
     assert "README.md" in result["context_pack"]
-    assert result["trusted_project"] is True
+    assert result["trusted_tool"] is True
     assert result["trusted_for_deepseek"] is True
 
 
@@ -23,7 +23,7 @@ def test_context_saver_prepare_doctor_mode_reports_env_status():
     assert result["env_file"].endswith(".env")
     assert "deepseek_api_key_configured" in result
     assert "anysearch_api_key_configured" in result
-    assert result["context_saver_trusted_project"] is True
+    assert result["context_saver_trusted_tool"] is True
     assert result["trusted_for_deepseek"] is True
 
 
@@ -40,7 +40,7 @@ def test_context_saver_prepare_search_falls_back_when_anysearch_fails(monkeypatc
     result = context_saver_prepare(kind="search", query="hello", use_deepseek=False)
 
     assert result["anysearch_used"] is False
-    assert result["trusted_project"] is True
+    assert result["trusted_tool"] is True
     assert result["trusted_for_deepseek"] is True
     assert "AnySearch unavailable" in result["anysearch_error"]
     assert result["deepseek_used"] is False
