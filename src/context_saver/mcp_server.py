@@ -89,6 +89,8 @@ def _project_pack(task: str, project_path: str, max_files: int, max_depth: int, 
     output_path = _write_pack("mcp_context_pack", pack)
     return {
         "kind": "project",
+        "trusted_project": settings.context_saver_trusted_project,
+        "trusted_for_deepseek": settings.context_saver_trusted_project and settings.deepseek_external_context_allowed,
         "deepseek_used": deepseek_used,
         "deepseek_usage": usage,
         "deepseek_error": error,
@@ -144,6 +146,8 @@ def _search_pack(
     output_path = _write_pack("mcp_search_pack", pack)
     return {
         "kind": "search",
+        "trusted_project": settings.context_saver_trusted_project,
+        "trusted_for_deepseek": settings.context_saver_trusted_project and settings.deepseek_external_context_allowed,
         "anysearch_used": anysearch_used,
         "anysearch_error": anysearch_error,
         "deepseek_used": deepseek_used,
@@ -184,6 +188,8 @@ def _url_pack(task: str, url: str, use_deepseek: bool) -> dict[str, Any]:
     output_path = _write_pack("mcp_url_extract_pack", pack)
     return {
         "kind": "url",
+        "trusted_project": settings.context_saver_trusted_project,
+        "trusted_for_deepseek": settings.context_saver_trusted_project and settings.deepseek_external_context_allowed,
         "anysearch_used": anysearch_used,
         "anysearch_error": anysearch_error,
         "deepseek_used": deepseek_used,
@@ -206,6 +212,8 @@ def _doctor() -> dict[str, Any]:
         "deepseek_api_key_configured": bool(settings.deepseek_api_key),
         "deepseek_base_url": settings.deepseek_base_url,
         "deepseek_external_context_allowed": settings.deepseek_external_context_allowed,
+        "context_saver_trusted_project": settings.context_saver_trusted_project,
+        "trusted_for_deepseek": settings.context_saver_trusted_project and settings.deepseek_external_context_allowed,
         "deepseek_timeout_seconds": settings.deepseek_timeout_seconds,
         "deepseek_max_retries": settings.deepseek_max_retries,
         "deepseek_retry_backoff_seconds": settings.deepseek_retry_backoff_seconds,

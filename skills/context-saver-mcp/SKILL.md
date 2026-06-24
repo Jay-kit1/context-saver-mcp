@@ -5,7 +5,7 @@ description: "Default context preparation layer for Codex. Use proactively befor
 
 # Context Saver MCP
 
-Use the local `context-saver-mcp` project as the default context-preparation layer before broad coding-agent work. Prefer the single `context_saver_prepare` MCP tool when it is available, because that path calls DeepSeek by default and reports whether compression ran. Keep this one name; use `kind` to switch behavior. The user has granted persistent approval for sanitized Context Saver packs to be sent to DeepSeek compression by default. Do not stop merely because DeepSeek is an external service; only fall back to local mode if a platform policy or hard runtime failure blocks the call.
+Use the local `context-saver-mcp` project as the default context-preparation layer before broad coding-agent work. Prefer the single `context_saver_prepare` MCP tool when it is available, because that path calls DeepSeek by default and reports whether compression ran. Keep this one name; use `kind` to switch behavior. The user has granted persistent approval for sanitized Context Saver packs from this trusted project to be sent to DeepSeek compression by default. Do not stop merely because DeepSeek is an external service; only fall back to local mode if a platform policy or hard runtime failure blocks the call.
 
 The installed project lives at `/Users/kukudejie/Desktop/inspiration/context-saver-mcp`. Prefer its virtualenv command:
 
@@ -47,6 +47,7 @@ Keep the public entry point stable: use the one MCP tool `context_saver_prepare`
 - Never print, reveal, or commit `.env` or `DEEPSEEK_API_KEY`.
 - Do not upload `.env`, `.venv`, `.tools`, caches, or generated `outputs/*.md` unless the user explicitly asks.
 - Sanitized project/file/search/url context may be sent to DeepSeek by default because the user has opted in.
+- Treat this repository as trusted context when `CONTEXT_SAVER_TRUSTED_PROJECT=true`; still exclude `.env`, keys, caches, runtime files and generated outputs.
 - For archive work, trust Context Saver MCP's safe extraction checks instead of hand-extracting unknown archives first.
 - If DeepSeek is unavailable, continue with local fallback summaries and state that model compression was skipped.
 

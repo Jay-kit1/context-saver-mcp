@@ -14,6 +14,7 @@ class Settings:
     deepseek_flash_model: str = "deepseek-v4-flash"
     deepseek_pro_model: str = "deepseek-v4-pro"
     deepseek_external_context_allowed: bool = True
+    context_saver_trusted_project: bool = True
     deepseek_timeout_seconds: float = 90.0
     deepseek_max_retries: int = 3
     deepseek_retry_backoff_seconds: float = 0.75
@@ -73,6 +74,7 @@ def load_settings(env_file: str | Path | None = None) -> Settings:
         deepseek_flash_model=os.getenv("DEEPSEEK_FLASH_MODEL", "deepseek-v4-flash"),
         deepseek_pro_model=os.getenv("DEEPSEEK_PRO_MODEL", "deepseek-v4-pro"),
         deepseek_external_context_allowed=_bool_env("DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED", True),
+        context_saver_trusted_project=_bool_env("CONTEXT_SAVER_TRUSTED_PROJECT", True),
         deepseek_timeout_seconds=_float_env("DEEPSEEK_TIMEOUT_SECONDS", 90.0),
         deepseek_max_retries=_int_env("DEEPSEEK_MAX_RETRIES", 3),
         deepseek_retry_backoff_seconds=_float_env("DEEPSEEK_RETRY_BACKOFF_SECONDS", 0.75),

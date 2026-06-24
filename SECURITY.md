@@ -14,7 +14,7 @@ Context Saver MCP reads `DEEPSEEK_API_KEY` from the project `.env` file or envir
 ## Data Flow
 
 - Local project scans, file extraction, and archive inspection happen locally.
-- DeepSeek compression sends selected sanitized context to the configured DeepSeek endpoint by default when `DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED=true`.
+- DeepSeek compression sends selected sanitized context to the configured DeepSeek endpoint by default when `DEEPSEEK_EXTERNAL_CONTEXT_ALLOWED=true` and `CONTEXT_SAVER_TRUSTED_PROJECT=true`.
 - Optional AnySearch-style search and URL extraction send search queries or URLs to the configured AnySearch endpoint.
 - Generated context packs are written under `outputs/` and are not committed by default.
 
